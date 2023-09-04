@@ -1,0 +1,17 @@
+-- Here are some of the views I had to create --
+
+CREATE VIEW title_view AS
+Select title_id,
+title_type from title;
+
+CREATE VIEW ratings_view AS
+Select avg(average_rating) as AvgRating , name_ as Name
+From Title_Ratings TR
+join Had_Role HR on (TR.title_id = HR.title_id)
+Join Names N on (HR.name_id = N.name_id)
+group by Name;
+
+Create view ratings_view AS
+Select primary_title, average_rating
+from Title_Ratings TR
+join Title T on (TR.title_id = T.title_id)
