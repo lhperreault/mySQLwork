@@ -1,0 +1,57 @@
+-- Below are some queries using window functions where I had to create a view first. 
+
+-- Which are the Total Sales per Customer and the product they bought the most of?
+CREATE VIEW sales_p_c AS
+    SELECT c.customerNumber,
+           p.productCode, p.productName, customerName,
+           SUM(quantityOrdered * priceEach) AS sales
+      FROM orders o
+      JOIN orderdetails od ON (o.orderNumber = od.orderNumber)
+           JOIN
+           customers c ON (c.customerNumber = o.customerNumber)
+           JOIN
+           products p ON (p.productCode = od.productCode)
+     GROUP BY c.customerNumber,
+              p.productCode;
+              
+SELECT productCode,
+       customerNumber,
+       sales,
+       sum(sales) OVER customer_window AS total_sales
+  FROM sales_P_c
+WINDOW customer_window AS (PARTITION BY customerNumber);
+-- Which are the Products with the most Sales in one Order?
+
+create view orderproductsales as 
+select od.productCode, p.productName, od.orderNumber, od.quantityOrdered*od.priceEach as sales
+from orderdetails od
+join products p on od.productCode=p.productCode;
+
+SELECT productCode, productName, orderNumber, sum(sales) over P_window as Sales
+  FROM orderproductsales
+   WINDOW P_window as (Partition by orderNumber)
+   order by sales desc;
+
+-- Which are the Products with most Sales per Customer?
+
+CREATE VIEW customers_products AS
+    SELECT c.customerNumber, c.customerName,
+           od.quantityOrdered * od.priceEach AS sales,
+           p.productCode, p.productName
+      FROM orderdetails od
+           JOIN orders o on o.orderNumber=od.orderNumber
+           Join customers c ON c.customerNumber = o.customerNumber
+           Join products p on od.productCode=p.productCode;
+   
+Select productName,
+       customerName,
+       sum(sales) as sales,
+       product_sales
+       from(
+SELECT productName,
+       customerName,
+       sales,
+       sum(sales) OVER product_window AS product_sales
+  FROM customers_products
+WINDOW product_window AS (PARTITION BY productName)
+order by product_sales desc , sales desc) group by productName, customerName order by product_sales desc, sales desc;
