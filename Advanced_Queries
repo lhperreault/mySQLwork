@@ -1,0 +1,84 @@
+-- Continuation of working with a shopping database where we have products, customers, and sales data.
+-- This one contains more advanced queries.
+
+-- Which is the Ranking of Customers by Sales? First I need to create a view.
+
+CREATE VIEW customers_products AS
+    SELECT c.customerNumber, c.customerName,
+           od.quantityOrdered * od.priceEach AS sales,
+           p.productCode, p.productName
+      FROM orderdetails od
+           JOIN orders o on o.orderNumber=od.orderNumber
+           Join customers c ON c.customerNumber = o.customerNumber
+           Join products p on od.productCode=p.productCode;
+           
+SELECT customerName, sales as sales, rank() over customers_window as Rank, count
+from (
+select customerName, sum(sales) as sales, count(customerName) as count
+    FROM customers_products
+    group by customerName)
+    WINDOW customers_window AS 
+        (ORDER BY sales desc);
+        
+--which is the ranking of customers by sales--
+
+select customerNumber, customerName, Ranking, Sales, round(total_sales,2) as total_sales , round(Sales/total_sales*100,2) as Percentage
+FROM(
+select customerNumber, customerName, Sales, sum(Sales) OVER customertot_window AS total_sales, rank() OVER customertot_window as Ranking
+from sales_by_customers
+WINDOW customertot_window AS (order by Sales desc)
+);
+
+-- I created a time series view -- 
+
+Create VIEW time_series AS
+select c.customerName, c.customerNumber, p.productName, sum(ot.quantityOrdered*ot.priceEach) as Sales, o.orderDate, strftime("%d", o.orderDate) day, strftime("%m", o.orderDate) month, strftime("%Y", o.orderDate) year
+from orderdetails ot
+join orders o on (ot.orderNumber=o.orderNumber)
+Join customers c on (c.customerNumber=o.customerNumber)
+join products p on (p.productCode=ot.productCode)
+group by o.orderDate, o.customerNumber, p.productName;
+
+--Which are the total sales by year and month (yyyy/mm)--
+
+select year, month, sum(Sales) as sales
+from time_series
+group by year, month;
+
+-- Which month in what year were the most sales recorded
+
+Select * from(
+select *, rank() over sales_window AS RANK
+from(
+select year, month, sum(Sales) over month_window as Sales
+from time_series
+group by year , month
+Window month_window AS ( order by Sales)) Window sales_window AS (order by Sales desc)) where rank = 1
+;
+
+-- find what the average sale was of each month. and then find the average of all the months and for each month compare it to the average whether is above or below.-- 
+
+select *, monthly_avg/net_monthly_avg as net_indicator
+from(
+select year, month, monthly_avg, avg(monthly_avg) over window_year as net_monthly_avg
+from(
+select distinct year, month, avg(Sales) over month_window as monthly_avg
+from time_series
+Window month_window AS (partition by year, month order by year, month)) window window_year as ());
+
+--calculate the customers cumulative sales. 
+
+create view percentage_sales as
+select sum(ot.quantityOrdered*ot.priceEach) as Sales, c.customerNumber, c.customerName
+from orderdetails ot
+join orders o on (ot.orderNumber=o.orderNumber)
+join customers c on (o.customerNumber = c.customerNumber)
+group by c.customerNumber;
+
+-- create a case where you give a grade to each customer based on their percentage contribution to net sales
+select customerNumber, customerName, pct_sales, each_percentage, rownum,
+case 
+when each_percentage >1 THEN 'A'
+when each_percentage >0.75 THEN 'B'
+else 'C'
+END AS customerClass
