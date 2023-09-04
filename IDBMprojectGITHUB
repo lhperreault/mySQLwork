@@ -1,0 +1,305 @@
+-- Below are queries about data from the IDBM database.
+
+-- I wanted to answer one question. 
+-- What would make the PERFECT movie according to the data? Which common Statistics are there among top rated movies?
+-- I have two question because the second one kinda explains the first. 
+
+-- much of the code is me testing different variables and seeing the output and seeing what i want to use and not use.
+-- I had to create a few index's and views as well because of the amount of data being processed. It helped  the speed.
+select * 
+From Title T
+-- there are more 7498847 total movies
+
+select *
+From Title T
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 AND Average_Rating > 7.9 
+group by T.title_id
+order by average_rating desc
+
+-- we have 242 , the 99th percentile
+
+select genre, count(genre) as Count
+From Title T
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Join title_genres TG on (T.title_id = TG.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 AND Average_Rating > 7.9 
+group by TG.genre
+order by Count desc
+Limit 10
+-- we see the top ten 10 genres and the count of each. I should change it to their percentage
+Select name_ , primary_title, average_rating
+from Title T
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+join Had_role KF on (T.title_id = KF.title_id)
+join Names N on (N.name_id = KF.name_id)
+where primary_title = 'The Dark Knight'
+
+-- below we get the names of people that were in the top rated movies.
+select name_ , COUNT(name_) AS Count
+From Title T
+Join Had_role KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 AND Average_Rating > 7.9
+group by name_ 
+Order by Count desc
+
+-- below is a list of top directors
+select name_ , COUNT(name_) AS Count
+From Title T
+Join Directors KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 AND Average_Rating > 7.9
+group by name_ 
+Order by Count desc
+
+--below are the top writers
+select name_ , COUNT(name_) AS Count
+From Title T
+Join Writers KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 AND Average_Rating > 7.9
+group by name_ 
+Order by Count desc
+
+--below is the count startyear 
+select count(start_year) as Year, start_year
+From Title T
+Join Directors KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 AND Average_Rating > 7.9
+group by start_year 
+order by Year desc
+
+-- average runtime
+select round(avg(runtime_minutes),0) as AverageRunTime
+From Title T
+Join Directors KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 AND Average_Rating > 7.9
+
+
+########################
+------- new method of solving the prblem
+
+select genre, avg(Average_Rating) as Rating, count(genre) as Count
+From Title T
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Join title_genres TG on (T.title_id = TG.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 AND Average_Rating > 7.9 
+group by TG.genre
+order by Count desc
+Limit 10
+
+-- we see the top ten 10 genres and the count of each. I should change it to their percentage
+-- movie	8.26694214876031	484
+--Drama	8.28698224852071	169
+--Adventure	8.259375	64
+--Action	8.30645161290323	62
+--Crime	8.32156862745098	51
+
+-- below we get the names of people that were in the top rated movies.
+
+select name_ , avg(Average_Rating) as Rating,  COUNT(name_) AS Count
+From Title T
+Join Had_role KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 AND Average_Rating > 7.9
+group by name_ 
+Order by Count desc
+
+--Robert De Niro	8.4	8
+--Leonardo DiCaprio	8.2875	8
+--Harrison Ford	8.34285714285714	7
+--Tom Hanks	8.45	6
+--Matt Damon	8.25	6
+--Brad Pitt	8.35	6
+--Al Pacino	8.46666666666667	6
+
+-- below is a list of top directors
+
+select name_ ,  avg(Average_Rating) as Rating, COUNT(name_) AS Count
+From Title T
+Join Directors KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 AND Average_Rating > 7.9
+group by name_ 
+Order by Count desc , Rating desc
+
+--Steven Spielberg	8.38571428571429	7
+--Quentin Tarantino	8.31428571428571	7
+--Martin Scorsese	8.32857142857143	7
+--Christopher Nolan	8.61428571428571	7 ***
+--Hayao Miyazaki	8.23333333333333	6
+--Stanley Kubrick	8.275	4
+
+--below are the top writers
+
+select name_ ,  avg(Average_Rating) as Rating,  COUNT(name_) AS Count
+From Title T
+Join Writers KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 AND Average_Rating > 7.9
+group by name_ 
+Order by Count desc
+
+--Christopher Nolan	8.61428571428571	7
+--Quentin Tarantino	8.36666666666667	6
+--Pete Docter	8.23333333333333	6
+--Hayao Miyazaki	8.23333333333333	6
+--Jonathan Nolan	8.64	5
+--George Lucas	8.46	5
+--Bob Kane	8.46	5
+
+--below is the count startyear 
+
+select count(start_year) as Year, start_year,  avg(Average_Rating) as Rating
+From Title T
+Join Directors KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 AND Average_Rating > 7.9
+group by start_year
+order by Year desc , Rating desc
+
+--12	2016	8.175
+--11	2007	8.15454545454546
+--9	1995	8.27777777777778
+--9	2001	8.26666666666667
+--9	2003	8.24444444444445
+--9	2014	8.2
+--9	2010	8.2
+
+-- average runtime
+
+select round(avg(runtime_minutes),0) as AverageRunTime
+From Title T
+Join Directors KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 AND Average_Rating > 7.9
+
+
+
+
+########################
+------- new method 2.0
+-- I wanted to change my parameters a bit and see if by changing something it would change the results. 
+
+
+
+select genre, avg(Average_Rating) as Rating, count(genre) as Count
+From Title T
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Join title_genres TG on (T.title_id = TG.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000
+group by TG.genre
+order by Count desc
+Limit 10
+
+--Drama	7.37525773195876	873
+--Action	6.79650259067357	772
+--Comedy	6.8793427230047	639
+--Adventure	6.88003300330033	606
+--Crime	7.09494680851064	376
+-- we see the top ten 10 genres and the count of each. I should change it to their percentage
+
+-- below we get the names of people that were in the top rated movies.
+
+select name_ , avg(Average_Rating) as Rating,  COUNT(name_) AS Count
+From Title T
+Join Had_role KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000
+group by name_ 
+Order by Count desc, Rating desc
+
+--Robert De Niro	7.31176470588235	34
+--Johnny Depp	6.984375	32
+--Tom Hanks	7.43225806451613	31
+--Brad Pitt	7.38064516129032	31
+--Matt Damon	7.23103448275862	29
+--Tom Cruise	7.13571428571429	28
+--Bruce Willis	7.10740740740741	27
+--Samuel L. Jackson	7.02307692307692	26
+--Morgan Freeman	7.08	25
+
+-- below is a list of top directors
+
+select Count , name_, Rating
+from(
+select name_ ,  avg(Average_Rating) as Rating, COUNT(name_) AS Count
+From Title T
+Join Directors KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000
+group by name_ 
+Order by Rating desc)
+WHERE Count > 9
+
+--12	Quentin Tarantino	7.89166666666667
+--14	Martin Scorsese	7.87142857142857
+--10	David Fincher	7.76
+--12	Clint Eastwood	7.60833333333333
+--25	Steven Spielberg	7.568
+
+--below are the top writers
+
+select name_ ,  avg(Average_Rating) as Rating,  COUNT(name_) AS Count
+From Title T
+Join Writers KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 
+group by name_ 
+Order by Rating desc
+--Ordered by COUNTTTT
+--Stan Lee	7.10666666666667	30
+--Jack Kirby	7.10370370370371	27
+--Terry Rossio	6.83888888888889	18
+--Sylvester Stallone	6.78235294117647	17
+--Joel Coen	7.4	17
+--Ethan Coen	7.4	17
+--Ted Elliott	6.85625	16
+--Stephen King	7.24375	16
+
+--below is the count startyear 
+
+select count(start_year) as Year, start_year,  avg(Average_Rating) as Rating
+From Title T
+Join Directors KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000
+group by start_year 
+order by Rating desc
+
+--2	1972	8.45
+--7	1975	8.1
+--6	1976	7.88333333333333
+--7	1974	7.84285714285714
+--10	1979	7.83
+--3	2022	7.8
+--6	1981	7.73333333333333
+
+-- average runtime
+
+select round(avg(runtime_minutes),0) as AverageRunTime
+From Title T
+Join Directors KF on (KF.title_id = T.title_id )
+Join Names N on (N.name_id = KF.name_id)
+Join Title_Ratings TR on (T.title_id = TR.title_id)
+Where title_type like 'Movie' AND runtime_minutes > 80 AND start_year > 1970 AND num_votes > 100000 
+
+-- 115
+-- I analyze all the answers into a PP next...
