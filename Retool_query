@@ -1,0 +1,12 @@
+## code from a query in a no code automation and web app builder Retool ##
+
+SELECT *
+FROM (
+    SELECT *
+    FROM ds1 d
+    WHERE
+        ({{!textInput10.value}} OR d.aseguradora ILIKE {{'%' + textInput10.value + '%'}})
+        AND
+        ({{segmentedControl1.value}} = 'todo' OR d.tipo_de_cliente ILIKE {{segmentedControl1.value}})
+) AS subquery_alias
+ORDER BY ID DESC;
